@@ -192,20 +192,16 @@ function logQueryError(where: string, error: { code?: string; message: string })
  * costs one round trip.
  */
 export const getPublishedArticles = cache(
-  async (limit: number = FEED_LIMIT): Promise<FeedArticle[]> => {
-    const { data, error } = await getServiceRoleClient()
-      .from("articles")
-      .select(JOINED_SELECT)
+  async (limit: number = FEED_LIMIT, topic?: string): Promise<FeedArticle[]> => {
+    let query = getServiceRoleClient()
       // Cheap pre-filter only; the authoritative check is the joined row below.
       .not("analyzed_at", "is", null)
       .order("published_at", { ascending: false })
-      .limit(limit)
-      .returns<ArticleJoinedRow[]>();
+      .limit(limit);
 
-    if (error) {
-      logQueryError("getPublishedArticles", error);
-      return [];
-    }
+    if (topic) {
+      query = query.ilike("category", `%${topic}%`);
+
 
     return (data ?? [])
       .map(toFeedArticle)

@@ -24,10 +24,18 @@ export const revalidate = 300;
 
 export default async function Home(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const topic = typeof searchParams.topic === "string" ? searchParams.topic : undefined;
 
+  const articles = await getPublishedArticles(24, topic);
+
+  return (
+    <>
       <TopicRail currentTopic={topic} />
 
       <main className="flex-1 bg-surface">
+        <div className="mx-auto max-w-page px-6 py-8">
           <h1 className="text-h2 font-semibold text-text-primary">Top News</h1>
 
           {articles.length === 0 ? (

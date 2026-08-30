@@ -44,10 +44,12 @@ const ATTEMPT_MULTIPLIER = 3;
 const ATTEMPT_FLOOR = 6;
 
 export function tally(counts: Record<string, number>, reason: RejectionReason): void {
+  counts[reason] = (counts[reason] ?? 0) + 1;
 }
 
 export function mergeCounts(into: Record<string, number>, from: Record<string, number>): void {
   for (const [reason, count] of Object.entries(from)) {
+    into[reason] = (into[reason] ?? 0) + count;
   }
 }
 
@@ -98,6 +100,7 @@ export async function processSource(
   source: SourceRow,
   html: string,
   perSourceLimit: number,
+): Promise<ScrapeSourceSummary> {
   const summary = emptySourceSummary(source);
 
   // Step 3 — candidate links from visible homepage story cards only (§11).

@@ -296,8 +296,10 @@ export async function getScheduleRuns(scheduleId: string): Promise<OxylabsRun[]>
   return parsed.runs.map((r: { run_id: string; jobs?: { id: string; result_status: string }[] }) => ({
     runId: r.run_id,
     jobs: (r.jobs || []).map((j: { id: string; result_status: string }) => ({
+      id: j.id,
       resultStatus: j.result_status
     }))
+  }));
 }
 
 export async function getJobResult(jobId: string): Promise<OxylabsFetchResult> {

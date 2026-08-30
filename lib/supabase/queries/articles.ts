@@ -348,7 +348,7 @@ export async function getPendingAnalysisArticles(
 export const getUniqueCategories = cache(async (): Promise<string[]> => {
   const { data, error } = await getServiceRoleClient()
     .from("articles")
-    .select("category")
+    .select("category, article_analyses!inner(model)")
     .not("category", "is", null);
 
   if (error) {

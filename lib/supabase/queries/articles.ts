@@ -1,7 +1,25 @@
 import "server-only";
 
 import { cache } from "react";
+import { embed } from "ai";
+import { google } from "@ai-sdk/google";
+import { unstable_cache } from "next/cache";
 import { getServiceRoleClient } from "@/lib/supabase/server";
+
+const getTopicEmbedding = unstable_cache(
+  async (topic: string) => {
+    let { embedding } = await embed({
+      model: google.textEmbeddingModel("gemini-embedding-001"),
+      value: topic,
+    });
+    if (embedding.length > 768) {
+      embedding = embedding.slice(0, 768);
+    }
+    return embedding;
+  },
+  ["topic-embedding"],
+  { revalidate: 86400 } // cache for 1 day
+);
 import type {
   ArticleAnalysisRow,
   ArticleInsert,
@@ -185,6 +203,7 @@ function logQueryError(where: string, error: { code?: string; message: string })
   );
 }
 
+
 /**
  * Home feed: analysed articles, newest first.
  *
@@ -193,19 +212,37 @@ function logQueryError(where: string, error: { code?: string; message: string })
  */
 export const getPublishedArticles = cache(
   async (limit: number = FEED_LIMIT, topic?: string): Promise<FeedArticle[]> => {
-    let query = getServiceRoleClient()
+    if (topic) {
+      const embedding = await getTopicEmbedding(topic);
+      
+      const { data, error } = await getServiceRoleClient()
+        .rpc("match_articles", {
+          query_embedding: embedding,
+          match_article_id: "00000000-0000-0000-0000-000000000000",
+          match_limit: limit,
+        })
+        .select(JOINED_SELECT)
+        .returns<ArticleJoinedRow[]>();
+
+      if (error) {
+        logQueryError("getPublishedArticles (topic search)", error);
+        return [];
+      }
+
+      return (data ?? [])
+        .filter((row) => firstOf(row.article_analyses) !== null)
+        .map(toFeedArticle)
+        .filter((article): article is FeedArticle => article !== null);
+    }
+
+    const { data, error } = await getServiceRoleClient()
       .from("articles")
       .select(JOINED_SELECT)
       // Cheap pre-filter only; the authoritative check is the joined row below.
       .not("analyzed_at", "is", null)
       .order("published_at", { ascending: false })
-      .limit(limit);
-
-    if (topic) {
-      query = query.ilike("category", `%${topic}%`);
-    }
-
-    const { data, error } = await query.returns<ArticleJoinedRow[]>();
+      .limit(limit)
+      .returns<ArticleJoinedRow[]>();
 
     if (error) {
       logQueryError("getPublishedArticles", error);

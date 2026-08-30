@@ -1,0 +1,473 @@
+I'm here to help you with the docs.
+Automate recurring scraping jobs with the free Scheduler in Web Scraper API. Set frequency with cron, specify job items & end time, and monitor runs via dedicated endpoints.
+Scheduler is a free feature of Web Scraper API that lets you automate recurring scraping and parsing jobs by creating schedules.
+Check out the video tutorial below to learn more about Scheduler and how it works.
+We advise using Scheduler together with the Upload to Cloud Storage feature. This way, you can set up your schedule and receive regular data updates in your storage without trying to fetch results from our system.
+IMPORTANT: Scheduler is a powerful tool that can quickly raise your service bill. We advise testing it with a few job items and a limited number of repeats to ensure you get the correct data at the right intervals. Once that's established, you can stop the test schedule and create a new, scaled-up schedule.
+Quick Start
+When creating a new schedule, follow the simple steps below.
+Tell us how often we should repeat the jobs by submitting a cron schedule expression;
+Give us a bunch of job parameter sets that we should execute at scheduled times;
+Let us know when to stop by submitting an end time.
+See here to find a code example for submitting a new schedule.
+NOTE: You can also download and import this Postman collection to try out all our Scheduler endpoints. New to Postman? Learn more about this tool here.
+Endpoints
+Scheduler has several endpoints you can use to control the service:
+Create a new schedule
+Get all schedules
+Get runs information
+Get scheduled jobs
+Get schedule information
+Deactivate or reactivate a schedule
+Create a new schedule
+Use this endpoint to initiate a new schedule.
+Endpoint: https://data.oxylabs.io/v1/schedules
+https://data.oxylabs.io/v1/schedules
+Method: POST
+POST
+Authentication: Basic
+Basic
+Request headers: Content-Type: application/json
+Content-Type: application/json
+Input
+cron
+cron
+Cron schedule expression. It determines how often the submitted schedule will run. Read more here and here.
+-
+items
+items
+List of Scraper APIs job parameter sets that should be executed as part of the schedule.
+-
+end_time
+end_time
+The time at which the schedule should stop running. NB: the end time is inclusive.
+-
+- required parameter
+NOTE: For guidance on putting together job parameter sets for the items part of your Scheduler payload, refer to the documentation page of the particular scraper you would like to use (e.g. Google, Amazon, etc.).
+items
+The payload below will make Scheduler run two jobs schedule at 03:00 on Mondays until end_time (inclusive).
+end_time
+The response below confirms that the schedule was created successfully.
+Get all schedules
+Use this endpoint to get the list of all schedules associated with your user account.
+Endpoint: https://data.oxylabs.io/v1/schedules
+https://data.oxylabs.io/v1/schedules
+Method: GET
+GET
+Authentication: Basic
+Basic
+This endpoint returns the list of all schedule IDs associated with the user account making the request.
+See the sample response below.
+Get runs information
+Use this endpoint to get information about a list of all runs in a schedule with the metadata of each job and each run’s success rate.
+Endpoint: https://data.oxylabs.io/v1/schedules/{id}/runs
+https://data.oxylabs.io/v1/schedules/{id}/runs
+Method: GET
+GET
+Authentication: Basic
+Basic
+The payload below contains a sample /runs endpoint response.
+/runs
+runs
+runs
+A collection of run objects that represent execution instances of a scheduled task or workflow.
+Array
+runs:run_id
+runs
+run_id
+A unique identifier for the specific run instance.
+Integer
+runs:jobs
+runs
+jobs
+A collection of job objects that were executed as part of this run.
+Array
+runs:success_rate
+runs
+success_rate
+The ratio of successful jobs to total jobs in this run (ranges from 0 to 1).
+Number
+runs:jobs:id
+runs
+jobs
+id
+A unique Oxylabs identifier for the specific job.
+Integer
+runs:jobs:create_status_code
+runs
+jobs
+create_status_code
+HTTP status code returned when the job was created, indicating the initial acceptance of the job request.
+Integer
+runs:jobs:result_status
+runs
+jobs
+result_status
+The execution status of the job (e.g., "done", "failed", "pending").
+String
+runs:jobs:created_at
+runs
+jobs
+created_at
+Timestamp when the job was created
+String
+runs:jobs:result_created_at
+runs
+jobs
+result_created_at
+Timestamp when the job completed and produced a result
+String
+Get scheduled jobs
+Use this endpoint to get the list of scraping jobs executed as a result of running a schedule.
+Endpoint: https://data.oxylabs.io/v1/schedules/{id}/jobs
+https://data.oxylabs.io/v1/schedules/{id}/jobs
+Method: GET
+GET
+Authentication: Basic
+Basic
+The payload below contains a sample schedule info response.
+Get schedule information
+Use this endpoint to get information about a specific schedule.
+Endpoint: https://data.oxylabs.io/v1/schedules/{id}
+https://data.oxylabs.io/v1/schedules/{id}
+Method: GET
+GET
+Authentication: Basic
+Basic
+The payload below contains a sample schedule info response.
+schedule_id
+schedule_id
+The unique ID of the schedule.
+Integer
+active
+active
+Is the schedule active right now?
+Boolean
+items_count
+items_count
+The number of items (jobs) in the schedule.
+Integer
+cron
+cron
+The cron expression associated with the schedule.
+String
+end_time
+end_time
+The time upon which the schedule will stop being repeated.
+String
+next_run_at
+next_run_at
+The time upon which the schedule will run next.
+String
+links
+links
+A collection of link objects that define available API endpoints related to a schedule resource.
+Array
+links:rel
+links
+rel
+The relationship identifier that explains the purpose of the link relative to the parent resource.
+String
+links:href
+links
+href
+The URL path to the API endpoint. Represents the resource location that can be accessed.
+String
+links:method
+links
+method
+The HTTP method to be used when accessing this endpoint.
+String
+stats
+stats
+Contains stats job creation and job completion statistics.
+JSON Object
+stats:total_job_count
+stats
+total_job_count
+The number of items (jobs) in the schedule.
+Integer
+stats:job_create_outcomes
+stats
+job_create_outcomes
+Contains job creation statistics.
+JSON Array
+stats:job_create_outcomes:status_code
+stats
+job_create_outcomes
+status_code
+The status code received in response to an attempt to execute the schedule (create a scraping/parsing job).
+Integer
+stats:job_create_outcomes:job_count
+stats
+job_create_outcomes
+job_count
+The number of job creation attempts that resulted in that particular status code.
+Integer
+stats:job_create_outcomes:ratio
+stats
+job_create_outcomes
+ratio
+The ratio between the number of job creation attempts that resulted in that particular attempt and the total number of job creation attempts.
+Float
+job_result_outcomes
+job_result_outcomes
+Contains the outcome statistics of scraping/parsing jobs executed as part of the schedule.
+JSON Array
+status
+status
+The job status. Possible values: pending (the job is still being processed), done (the job has been completed successfully), faulted (the job has failed).
+pending
+done
+faulted
+String
+job_count
+job_count
+The number of jobs that resulted in that particular status.
+status
+Integer
+ratio
+ratio
+The ratio between the number of jobs with that particular status and the total number of jobs created.
+Float
+Deactivate or reactivate a schedule
+Use this endpoint to activate or deactivate a particular schedule.
+Endpoint: https://data.oxylabs.io/v1/schedules/{id}/state
+https://data.oxylabs.io/v1/schedules/{id}/state
+Method: PUT
+PUT
+Authentication: Basic
+Basic
+Use this endpoint to stop or restart a schedule.
+By setting active to false, you can stop the execution of a particular schedule.
+active
+false
+If you set active to true, you can reactivate a previously stopped schedule.
+active
+true
+Output
+The standard response is an empty response body with a 202 status code.
+202
+API response codes
+For API response codes, refer to API section.
+Last updated 3 months ago
+Was this helpful?
+Was this helpful?
+{
+  "cron": "0 3 * * 1",
+  "items": [
+    {"source": "universal", "url": "https://ip.oxylabs.io"},
+    {"source": "google_search", "query": "stuff"}
+  ],
+  "end_time": "2032-12-21 12:34:45"
+}
+{
+  "cron": "0 3 * * 1",
+  "items": [
+    {"source": "universal", "url": "https://ip.oxylabs.io"},
+    {"source": "google_search", "query": "stuff"}
+  ],
+  "end_time": "2032-12-21 12:34:45"
+}
+{
+    "schedule_id": 4134906379157007223,
+    "active": true,
+    "items_count": 3,
+    "cron": "0 3 * * 1",
+    "end_time": "2032-12-21 12:34:45",
+    "next_run_at": "2022-06-06 10:15:00"
+}
+{
+    "schedule_id": 4134906379157007223,
+    "active": true,
+    "items_count": 3,
+    "cron": "0 3 * * 1",
+    "end_time": "2032-12-21 12:34:45",
+    "next_run_at": "2022-06-06 10:15:00"
+}
+{
+    "schedules": [
+        1764178033254455101,
+        2885262175311057587,
+        3251365810325795747,
+        4134906379157007223,
+        4164931482277157062
+    ]
+}
+{
+    "schedules": [
+        1764178033254455101,
+        2885262175311057587,
+        3251365810325795747,
+        4134906379157007223,
+        4164931482277157062
+    ]
+}
+{
+ "runs": [
+        {
+            "run_id": 25037485,
+            "jobs": [
+                {
+                    "id": 7300439540206948353,
+                    "create_status_code": 202,
+                    "result_status": "done",
+                    "created_at": "2025-02-26 09:00:21",
+                    "result_created_at": "2025-02-26 09:00:23"
+                },
+                {
+                    "id": 7300439540169188353,
+                    "create_status_code": 202,
+                    "result_status": "done",
+                    "created_at": "2025-02-26 09:00:21",
+                    "result_created_at": "2025-02-26 09:00:22"
+                },
+                {
+                    "id": 7300439540198551553,
+                    "create_status_code": 202,
+                    "result_status": "done",
+                    "created_at": "2025-02-26 09:00:21",
+                    "result_created_at": "2025-02-26 09:00:23"
+                }
+            ],
+            "success_rate": 1
+        }
+}
+{
+ "runs": [
+        {
+            "run_id": 25037485,
+            "jobs": [
+                {
+                    "id": 7300439540206948353,
+                    "create_status_code": 202,
+                    "result_status": "done",
+                    "created_at": "2025-02-26 09:00:21",
+                    "result_created_at": "2025-02-26 09:00:23"
+                },
+                {
+                    "id": 7300439540169188353,
+                    "create_status_code": 202,
+                    "result_status": "done",
+                    "created_at": "2025-02-26 09:00:21",
+                    "result_created_at": "2025-02-26 09:00:22"
+                },
+                {
+                    "id": 7300439540198551553,
+                    "create_status_code": 202,
+                    "result_status": "done",
+                    "created_at": "2025-02-26 09:00:21",
+                    "result_created_at": "2025-02-26 09:00:23"
+                }
+            ],
+            "success_rate": 1
+        }
+}
+{
+    "jobs": [
+        7300439540206948353,
+        7300439540169188353,
+        7300439540198551553,
+        ...,
+      ]
+}
+{
+    "jobs": [
+        7300439540206948353,
+        7300439540169188353,
+        7300439540198551553,
+        ...,
+      ]
+}
+{
+    "schedule_id": 1764178033254455101,
+    "active": true,
+    "items_count": 3,
+    "cron": "0 3 * * 1",
+    "end_time": "2032-12-21 12:34:45",
+    "next_run_at": "2022-06-06 10:18:00",
+    "links": [
+        {
+            "rel": "runs",
+            "href": "/v1/schedules/1764178033254455101/runs",
+            "method": "GET"
+        },
+        {
+            "rel": "jobs",
+            "href": "/v1/schedules/1764178033254455101/jobs",
+            "method": "GET"
+        }
+    ],
+    "stats": {
+        "total_job_count": 3,
+        "job_create_outcomes": [
+            {
+                "status_code": 202,
+                "job_count": 3,
+                "ratio": 1
+            }
+        ],
+        "job_result_outcomes": [
+            {
+                "status": "done",
+                "job_count": 2,
+                "ratio": 0.67
+            },
+            {
+                "status": "faulted",
+                "job_count": 1,
+                "ratio": 0.33
+            }
+        ]
+    }
+}
+{
+    "schedule_id": 1764178033254455101,
+    "active": true,
+    "items_count": 3,
+    "cron": "0 3 * * 1",
+    "end_time": "2032-12-21 12:34:45",
+    "next_run_at": "2022-06-06 10:18:00",
+    "links": [
+        {
+            "rel": "runs",
+            "href": "/v1/schedules/1764178033254455101/runs",
+            "method": "GET"
+        },
+        {
+            "rel": "jobs",
+            "href": "/v1/schedules/1764178033254455101/jobs",
+            "method": "GET"
+        }
+    ],
+    "stats": {
+        "total_job_count": 3,
+        "job_create_outcomes": [
+            {
+                "status_code": 202,
+                "job_count": 3,
+                "ratio": 1
+            }
+        ],
+        "job_result_outcomes": [
+            {
+                "status": "done",
+                "job_count": 2,
+                "ratio": 0.67
+            },
+            {
+                "status": "faulted",
+                "job_count": 1,
+                "ratio": 0.33
+            }
+        ]
+    }
+}
+{
+  "active": false
+}
+{
+  "active": false
+}
+null
+null

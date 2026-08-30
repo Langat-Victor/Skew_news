@@ -56,6 +56,7 @@ export function mergeCounts(into: Record<string, number>, from: Record<string, n
 export function emptySourceSummary(source: SourceRow): ScrapeSourceSummary {
   return {
     source: source.name,
+    listingUrl: source.listing_url,
     candidatesFound: 0,
     candidatesRejected: 0,
     duplicatesSkipped: 0,

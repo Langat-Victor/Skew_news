@@ -242,7 +242,7 @@ export async function listSchedules(): Promise<string[]> {
   const rawText = await response.text();
   // Wait, schedules is an array of IDs in JSON. e.g. {"schedules": [123, 456]}
   // A safer regex for array elements:
-  const jsonArrMatch = rawText.match(/"schedules":\s*\[(.*?)\]/s);
+  const jsonArrMatch = rawText.match(/"schedules":\s*\[([\s\S]*?)\]/);
   if (!jsonArrMatch) return [];
   const ids = [...jsonArrMatch[1].matchAll(/(\d+)/g)].map(m => m[1]);
   return ids;

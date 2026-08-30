@@ -348,18 +348,27 @@ export async function getPendingAnalysisArticles(
 export const getUniqueCategories = cache(async (): Promise<string[]> => {
   const { data, error } = await getServiceRoleClient()
     .from("articles")
-    .select("category, article_analyses!inner(model)")
-    .not("category", "is", null);
+    .select("category, article_analyses(id)")
+    .not("analyzed_at", "is", null)
+    .not("category", "is", null)
+    .order("published_at", { ascending: false })
+    .limit(200);
 
   if (error) {
     logQueryError("getUniqueCategories", error);
     return [];
   }
 
-  const unique = new Set(data.map((row) => row.category));
+  const validData = (data ?? []).filter(
+    (row: any) =>
+      row.article_analyses &&
+      (Array.isArray(row.article_analyses) ? row.article_analyses.length > 0 : true)
+  );
+
+  const unique = new Set(validData.map((row) => row.category as string));
   unique.delete("News"); // Optional: filter out generic fallback if desired
   
-  return Array.from(unique) as string[];
+  return Array.from(unique);
 });
 
 /**

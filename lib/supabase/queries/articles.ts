@@ -1,25 +1,9 @@
 import "server-only";
 
 import { cache } from "react";
-import { embed } from "ai";
-import { google } from "@ai-sdk/google";
-import { unstable_cache } from "next/cache";
 import { getServiceRoleClient } from "@/lib/supabase/server";
 
-const getTopicEmbedding = unstable_cache(
-  async (topic: string) => {
-    let { embedding } = await embed({
-      model: google.textEmbeddingModel("gemini-embedding-001"),
-      value: topic,
-    });
-    if (embedding.length > 768) {
-      embedding = embedding.slice(0, 768);
-    }
-    return embedding;
-  },
-  ["topic-embedding"],
-  { revalidate: 86400 } // cache for 1 day
-);
+
 import type {
   ArticleAnalysisRow,
   ArticleInsert,
@@ -212,37 +196,19 @@ function logQueryError(where: string, error: { code?: string; message: string })
  */
 export const getPublishedArticles = cache(
   async (limit: number = FEED_LIMIT, topic?: string): Promise<FeedArticle[]> => {
-    if (topic) {
-      const embedding = await getTopicEmbedding(topic);
-      
-      const { data, error } = await getServiceRoleClient()
-        .rpc("match_articles", {
-          query_embedding: embedding,
-          match_article_id: "00000000-0000-0000-0000-000000000000",
-          match_limit: limit,
-        })
-        .select(JOINED_SELECT)
-        .returns<ArticleJoinedRow[]>();
-
-      if (error) {
-        logQueryError("getPublishedArticles (topic search)", error);
-        return [];
-      }
-
-      return (data ?? [])
-        .filter((row) => firstOf(row.article_analyses) !== null)
-        .map(toFeedArticle)
-        .filter((article): article is FeedArticle => article !== null);
-    }
-
-    const { data, error } = await getServiceRoleClient()
+    let query = getServiceRoleClient()
       .from("articles")
       .select(JOINED_SELECT)
       // Cheap pre-filter only; the authoritative check is the joined row below.
       .not("analyzed_at", "is", null)
       .order("published_at", { ascending: false })
-      .limit(limit)
-      .returns<ArticleJoinedRow[]>();
+      .limit(limit);
+
+    if (topic) {
+      query = query.eq("category", topic);
+    }
+
+    const { data, error } = await query.returns<ArticleJoinedRow[]>();
 
     if (error) {
       logQueryError("getPublishedArticles", error);
@@ -375,6 +341,26 @@ export async function getPendingAnalysisArticles(
     scrapedAt: row.scraped_at,
   }));
 }
+
+/**
+ * Fetches all unique categories currently stored in the articles table.
+ */
+export const getUniqueCategories = cache(async (): Promise<string[]> => {
+  const { data, error } = await getServiceRoleClient()
+    .from("articles")
+    .select("category")
+    .not("category", "is", null);
+
+  if (error) {
+    logQueryError("getUniqueCategories", error);
+    return [];
+  }
+
+  const unique = new Set(data.map((row) => row.category));
+  unique.delete("News"); // Optional: filter out generic fallback if desired
+  
+  return Array.from(unique) as string[];
+});
 
 /**
  * §9's URL existence check. Returns the subset of `urls` already stored, so the

@@ -9,6 +9,7 @@ import { FramingDetailsPanel } from "@/components/news/framing-details-panel";
 import { NewsletterCta } from "@/components/news/newsletter-cta";
 import { RelatedStories } from "@/components/news/related-stories";
 import { SourcePanel } from "@/components/news/source-panel";
+import { auth } from "@clerk/nextjs/server";
 import {
   getArticleBySlug,
   getRecentArticleSlugs,
@@ -49,6 +50,8 @@ export async function generateMetadata(
 export default async function NewsDetailsPage(
   props: PageProps<"/news/[slug]">,
 ) {
+  await auth.protect();
+
   const { slug } = await props.params;
   // `slug` is only ever a lookup key here — never interpolated into a path,
   // query, or markup (AGENTS.md §21).
